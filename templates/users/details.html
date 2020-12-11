@@ -1,8 +1,46 @@
-{% extends 'basel.html' %}
+{% extends 'base.html' %}
 
 {% block title%}{{ user.first_name }} {{ user.last_name }}{% endblock %}
 
 {% block content %}
-<h1>Sup!</h1>
+<h1>{{ user.first_name }} {{ user.last_name }}</h1>
 
-{% endblock}
+<h2>{{  user.username  }}</h2>
+<h2>{{  user.email  }}</h2>
+
+<ul>
+    {% for feedback in user.feedback %}
+
+    <li>
+        {{ feedback.title  }}  {{ feedback.content }}
+    </li>
+
+    <form>
+    {{form.hidden_tag()}}
+    <button formmethod="GET" formaction="/feedback/{{ feedback.id  }}/update">
+        Edit
+    </button>
+    <button formmethod="POST" formaction="/feedback/{{ feedback.id  }}/delete">
+        Delete
+
+    </button>
+
+    </form>
+
+    {% endfor %}
+</ul>
+
+<p>
+    <a href="/users/{{ user.id }}/feedback/new">
+        Add Comment
+    </a>
+</p>
+
+<form>
+    <button formaction="/users/{{ user.id }}/delete"
+        formmethod="POST">
+    Delete user
+    </button>
+</form>
+
+{% endblock %}

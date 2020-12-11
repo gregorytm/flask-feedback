@@ -1,6 +1,6 @@
-from flask import Flask, redirect, session, render_template
+from flask import Flask, redirect, session, render_template, flash
 from flask_debugtoolbar import DebugToolbarExtension
-from models import db, connect_db, User
+from models import db, connect_db, User, Feedback
 
 # what is zerkzug.exceptions?
 from werkzeug.exceptions import Unauthorized
@@ -26,8 +26,8 @@ def homepage():
 @app.route('/register', methods=['GET','POST'])
 def add_user():
 
-    if 'username' in session:
-        return redirect(f"/users/{session['username']}")
+    if 'id' in session:
+        return redirect(f"/users/{session['id']}")
 
     form = AddUserForm()
 
@@ -51,8 +51,8 @@ def add_user():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 
-    if "username" in session:
-        return redirect(f"/users/{session['username']}")
+    if "id" in session:
+        return redirect(f"/users/{session['id']}")
 
     form = LoginForm()
 
@@ -63,7 +63,7 @@ def login():
         user = User.authenticate(username, password)
         if user:
             session['username'] = user.username
-            return redirect(f"/users/{user.username}")
+            return redirect(f"/users/{user.id}")
         else:
             form.username.errors = ["Invalid username/password."]
             return render_template("{users/loggin.html", form=form)
@@ -72,15 +72,35 @@ def login():
 
 @app.route("/logout")
 def logout():
-    session.pop("username")
+    session.pop('username')
     return redirect("/login")
     
-@app.route('/users/<username>')
-def show_user(username):
+@app.route('/users/<id>')
+def show_user(id):
 
-    if "username" not in session or username != session['username']:
-        raise Unauthorized()
+    # if "id" not in session or id != session['id']:
+    #     raise Unauthorized()
 
-    user = User.query.get(username)
+    user = User.query.get(id)
 
     return render_template("users/details.html", user=user)
+
+@app.route('/secret')
+def show_secret():
+    if 'id' not in session:
+        flash("Not logged in")
+        return redirect ('/login')
+    else:
+        return render_template('secret.html')
+
+@app.route('/users/<id>/delete', methods=["POST"])
+def delete_current_user(id):
+    if "id" not in session or id != session["id"]:
+        raise Unauthorized()
+
+    user = User.query.get(id)
+    db.session.delete(user)
+    db.session.commit()
+    session.pop("id")
+
+    return redirect("/login")
