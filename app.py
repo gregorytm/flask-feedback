@@ -41,7 +41,7 @@ def add_user():
         user = User.register(username, password, email, first_name, last_name)
 
         db.session.commit()
-        session['username'] = user.username
+        session['id'] = user.id
 
         return render_template('home.html')
 
@@ -66,7 +66,7 @@ def login():
             return redirect(f"/users/{user.id}")
         else:
             form.username.errors = ["Invalid username/password."]
-            return render_template("{users/loggin.html", form=form)
+            return render_template("{users/login.html", form=form)
 
     return render_template("users/login.html", form=form)
 
@@ -104,3 +104,64 @@ def delete_current_user(id):
     session.pop("id")
 
     return redirect("/login")
+
+@app.route('/feedback/<int:feedback_id>/update', methods=['GET', 'POST'])
+def update_feedback(feedback_id):
+
+    feedback = Feedback.query.get(feedback_id)
+
+    if "id" not in session or feedback.id != session['id']:
+        raise Unauthorized()
+
+    form = FeedbackForm(obj=feedback)
+
+    if form.validate_on_submit():
+        feedback.title = form.title.data
+        feedback.content = form.content.data
+
+        db.session.commit
+
+        return redirect(f"/users/{feedback.username}")
+
+    return render_template("/feedback/edit.html", form=form, feedback=feedback)
+
+@app.route("/users/<id>/feedback/new", methods=["GET", "POST"])
+def new_feedback(id):
+
+    if "id" not in session or id != session['id']:
+        raise Unauthorized()
+
+    form = FeedbackForm()
+
+    if form.validate_on_submit():
+        title = form.title.data
+        content = form.content.data
+
+        feedback = Feedback(
+            title=title,
+            content=content,
+            username=username
+        )
+
+        db.session.add(feedback)
+        db.session.commit()
+
+        return redirect(f"/users/{feedback.username}")
+
+    else:
+        return render_template("feedback/new", form=form)
+
+@app.route("/feedback/<int:feedback_id>/delete", methods=["POST"])
+def delete_feedback(feedback_id):
+
+    feedback = Feedback.query.get(feedback_id)
+    if 'id' not in session or feedback.id != session['id']:
+        raise Unauthorized()
+
+    form = DeleteForm()
+
+    if form.validate_on_submit():
+        db.session.delete(feedback)
+        db.session.commit()
+
+    return redirect(f"/users/{feedback.id}")
