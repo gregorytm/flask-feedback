@@ -62,7 +62,7 @@ def login():
 
         user = User.authenticate(username, password)
         if user:
-            session['username'] = user.username
+            session['id'] = user.id
             return redirect(f"/users/{user.id}")
         else:
             form.username.errors = ["Invalid username/password."]
@@ -128,10 +128,10 @@ def update_feedback(feedback_id):
 @app.route("/users/<id>/feedback/new", methods=["GET", "POST"])
 def new_feedback(id):
 
-    if "id" not in session or id != session['id']:
+    if "id" not in session:
         raise Unauthorized()
 
-    form = FeedbackForm()
+    form = Feedback()
 
     if form.validate_on_submit():
         title = form.title.data
