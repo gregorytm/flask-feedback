@@ -72,7 +72,7 @@ def login():
 
 @app.route("/logout")
 def logout():
-    session.pop('username')
+    session.pop('id')
     return redirect("/login")
     
 @app.route('/users/<id>')
@@ -140,13 +140,13 @@ def new_feedback(id):
         feedback = Feedback(
             title=title,
             content=content,
-            username=username
+            user_id=id
         )
 
         db.session.add(feedback)
         db.session.commit()
 
-        return redirect(f"/users/{feedback.username}")
+        return redirect(f"/users/{feedback.user_id}")
 
     else:
         return render_template("feedback/new", form=form)
