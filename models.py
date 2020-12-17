@@ -39,11 +39,6 @@ class User(db.Model):
         else:
             return False
 
-def connect_db(app):
-
-    db.app = app
-    db.init_app(app)
-
 class Feedback(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -54,3 +49,7 @@ class Feedback(db.Model):
         nullable = False
         )
     
+def connect_db(app):
+
+    db.app = app
+    db.init_app(app)
