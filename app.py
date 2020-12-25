@@ -5,7 +5,7 @@ from models import db, connect_db, User, Feedback
 # what is zerkzug.exceptions?
 from werkzeug.exceptions import Unauthorized
 
-from forms import AddUserForm, LoginForm
+from forms import AddUserForm, LoginForm, FeedbackForm
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///feedback_db'
@@ -66,22 +66,26 @@ def login():
             return redirect(f"/users/{user.id}")
         else:
             form.username.errors = ["Invalid username/password."]
-            return render_template("{users/login.html", form=form)
+            return render_template("users/login.html", form=form)
 
     return render_template("users/login.html", form=form)
 
 @app.route("/logout")
 def logout():
-    session.pop('id')
-    return redirect("/login")
+    if "id" in session:
+        session.pop('id')
+        return redirect("/login")
+    else:
+        return redirect(f"/login")
     
 @app.route('/users/<id>')
 def show_user(id):
 
-    # if "id" not in session or id != session['id']:
-    #     raise Unauthorized()
+    if "id" not in session:
+        raise Unauthorized()
 
     user = User.query.get(id)
+    # form = DeleteForm()
 
     return render_template("users/details.html", user=user)
 
@@ -95,7 +99,7 @@ def show_secret():
 
 @app.route('/users/<id>/delete', methods=["POST"])
 def delete_current_user(id):
-    if "id" not in session or id != session["id"]:
+    if "id" not in session:
         raise Unauthorized()
 
     user = User.query.get(id)
@@ -110,7 +114,7 @@ def update_feedback(feedback_id):
 
     feedback = Feedback.query.get(feedback_id)
 
-    if "id" not in session or feedback.id != session['id']:
+    if "id" not in session:
         raise Unauthorized()
 
     form = FeedbackForm(obj=feedback)
@@ -119,9 +123,9 @@ def update_feedback(feedback_id):
         feedback.title = form.title.data
         feedback.content = form.content.data
 
-        db.session.commit
+        db.session.commit()
 
-        return redirect(f"/users/{feedback.id}")
+        return redirect(f"/users/{session['id']}")
 
     return render_template("/feedback/edit.html", form=form, feedback=feedback)
 
@@ -131,7 +135,7 @@ def new_feedback(id):
     if "id" not in session:
         raise Unauthorized()
 
-    form = Feedback()
+    form = FeedbackForm()
 
     if form.validate_on_submit():
         title = form.title.data
@@ -149,19 +153,17 @@ def new_feedback(id):
         return redirect(f"/users/{feedback.user_id}")
 
     else:
-        return render_template("feedback/new", form=form)
+        return render_template("feedback/new.html", form=form)
 
 @app.route("/feedback/<int:feedback_id>/delete", methods=["POST"])
 def delete_feedback(feedback_id):
 
-    feedback = Feedback.query.get(feedback_id)
-    if 'id' not in session or feedback.id != session['id']:
+    feedback = Feedback.query.get_or_404(feedback_id)
+    if 'id' not in session:
         raise Unauthorized()
+    
+    db.session.delete(feedback)
+    db.session.commit()
 
-    form = DeleteForm()
 
-    if form.validate_on_submit():
-        db.session.delete(feedback)
-        db.session.commit()
-
-    return redirect(f"/users/{feedback.id}")
+    return redirect(f"/users/{session['id']}")
